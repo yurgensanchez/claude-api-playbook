@@ -11,6 +11,11 @@ voyageai>=0.3.0
 rank-bm25>=0.2.2
 numpy>=1.26.0
 
+# Módulo 06 — alternativa local a Voyage, si no quieres dar de alta otra API.
+# Pesa bastante (arrastra torch), por eso va comentada: descoméntala solo si
+# vas a usar embeddings locales.
+# sentence-transformers>=3.0.0
+
 # Módulo 07 — features (imágenes, PDF)
 pillow>=10.3.0
 pypdf>=4.2.0

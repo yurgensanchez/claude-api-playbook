@@ -4,28 +4,28 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from shared import MODEL, extract_text, get_client
-from shared.utils import console
+from rag import Indice, proveedor_activo  # noqa: E402
+
+from shared import MODEL, extract_text, get_client  # noqa: E402
+from shared.utils import console  # noqa: E402
 
 DATA = Path(__file__).parent / "data"
 INDICE = DATA / "indice.json"
-MODELO_EMBEDDING = "voyage-3"
 
 client = get_client()
 
 
-def construir_indice() -> None:
-    # TODO leer corpus -> chunkear (reutilizar chunk_por_secciones de 01_)
-    #      -> embed(input_type="document")
-    #      -> guardar [{"texto", "titulo", "vector"}] en INDICE
-    raise NotImplementedError
+def obtener_indice(reconstruir: bool = False) -> Indice:
+    if INDICE.exists() and not reconstruir:
+        return Indice.cargar(INDICE)
 
-
-def recuperar(pregunta: str, k: int = 3) -> list[dict]:
-    # TODO embed(pregunta, input_type="query") -> coseno contra el índice
-    #      -> devolver los k mejores
-    raise NotImplementedError
+    console.print(f"[dim]Indexando con proveedor: {proveedor_activo()}[/dim]")
+    indice = Indice.desde_directorio(DATA)
+    indice.guardar(INDICE)
+    console.print(f"[green]{len(indice)} chunks indexados[/green]")
+    return indice
 
 
 PROMPT_RAG = """
@@ -44,11 +44,11 @@ Cita la sección de la que sale cada afirmación.
 """
 
 
-def responder(pregunta: str, k: int = 3) -> str:
-    chunks = recuperar(pregunta, k)
+def responder(indice: Indice, pregunta: str, k: int = 3) -> tuple[str, list[dict]]:
+    chunks = indice.buscar(pregunta, k=k)
 
     contexto = "\n\n".join(
-        f"<fragmento seccion=\"{c['titulo']}\">\n{c['texto']}\n</fragmento>"
+        f'<fragmento seccion="{c["titulo"]}">\n{c["texto"]}\n</fragmento>'
         for c in chunks
     )
 
@@ -59,28 +59,34 @@ def responder(pregunta: str, k: int = 3) -> str:
             {"role": "user", "content": PROMPT_RAG.format(contexto=contexto, pregunta=pregunta)}
         ],
     )
-    return extract_text(response)
+    return extract_text(response), chunks
 
 
 if __name__ == "__main__":
-    if not INDICE.exists():
-        console.print("Construyendo índice...")
-        construir_indice()
+    indice = obtener_indice()
 
     PREGUNTAS = [
-        "¿Qué política de devoluciones se aplica?",
+        "¿Qué política de devoluciones se aplica a un producto descatalogado?",
+        "¿Qué significa el error ERR-4021?",
         "¿Cuál es la capital de Mongolia?",  # fuera del corpus: debe decir que no sabe
     ]
 
-    for p in PREGUNTAS:
-        console.print(f"\n[bold green]P:[/bold green] {p}")
-        console.print(f"[cyan]R:[/cyan] {responder(p)}")
+    for pregunta in PREGUNTAS:
+        console.print(f"\n[bold green]P:[/bold green] {pregunta}")
+        respuesta, chunks = responder(indice, pregunta)
+
+        console.print("[dim]fragmentos recuperados:[/dim]")
+        for c in chunks:
+            console.print(f"  [dim]{c['score']:.4f}  [{c['titulo']}][/dim]")
+
+        console.print(f"[cyan]R:[/cyan] {respuesta}")
 
 # k bajo -> me dejo fuera el fragmento con la respuesta.
 # k alto -> meto ruido. Empiezo por 3-5.
 #
 # La instrucción "si no está en el contexto, dilo" es lo que evita que rellene
-# con conocimiento general. Probar a quitarla y comparar.
+# con conocimiento general. La tercera pregunta lo comprueba.
 #
 # La métrica que importa: ¿entró el fragmento correcto en el top-k? Si no entró,
-# el problema es de RECUPERACIÓN, no del prompt. Medir las dos fases por separado.
+# el problema es de RECUPERACIÓN, no del prompt. Por eso imprimo los fragmentos
+# recuperados junto a la respuesta: sin eso no se puede diagnosticar cuál falló.

@@ -5,9 +5,15 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from shared import MODEL, extract_text, get_client
-from shared.utils import console
+from rag import Indice  # noqa: E402
+
+from shared import MODEL, extract_text, get_client  # noqa: E402
+from shared.utils import console  # noqa: E402
+
+DATA = Path(__file__).parent / "data"
+INDICE = DATA / "indice.json"
 
 client = get_client()
 
@@ -18,7 +24,7 @@ BUSCAR_EN_BASE = {
         "Úsala siempre que la respuesta dependa de documentación interna, "
         "políticas o datos de producto. Puedes llamarla varias veces con "
         "consultas distintas si la primera no devuelve lo que necesitas. "
-        "Devuelve como máximo 5 fragmentos con su sección de origen."
+        "Devuelve como máximo 10 fragmentos con su sección de origen."
     ),
     "input_schema": {
         "type": "object",
@@ -27,16 +33,14 @@ BUSCAR_EN_BASE = {
                 "type": "string",
                 "description": "Consulta de búsqueda. Sé específico.",
             },
-            "k": {"type": "integer", "description": "Número de fragmentos (1-10)"},
+            "k": {
+                "type": "integer",
+                "description": "Número de fragmentos a devolver, entre 1 y 10",
+            },
         },
         "required": ["consulta"],
     },
 }
-
-
-def buscar_en_base(consulta: str, k: int = 5) -> list[dict]:
-    # TODO conectar el pipeline de 05_
-    raise NotImplementedError
 
 
 SYSTEM = """
@@ -50,13 +54,16 @@ información no está, dilo claramente.
 """
 
 
-def responder(pregunta: str) -> str:
-    messages = [{"role": "user", "content": pregunta}]
+def responder(indice: Indice, pregunta: str, max_iteraciones: int = 8) -> str:
+    messages: list[dict] = [{"role": "user", "content": pregunta}]
 
-    for _ in range(8):
+    for _ in range(max_iteraciones):
         response = client.messages.create(
-            model=MODEL, max_tokens=4096, system=SYSTEM,
-            tools=[BUSCAR_EN_BASE], messages=messages,
+            model=MODEL,
+            max_tokens=4096,
+            system=SYSTEM,
+            tools=[BUSCAR_EN_BASE],
+            messages=messages,
         )
 
         if response.stop_reason == "end_turn":
@@ -68,12 +75,20 @@ def responder(pregunta: str) -> str:
         for bloque in response.content:
             if bloque.type != "tool_use":
                 continue
-            console.print(f"  [dim]buscando: {bloque.input['consulta']}[/dim]")
+
+            consulta = bloque.input["consulta"]
+            k = min(max(bloque.input.get("k", 5), 1), 10)
+            console.print(f"  [dim]buscando: \"{consulta}\" (k={k})[/dim]")
+
             try:
-                fragmentos = buscar_en_base(**bloque.input)
-                contenido, es_error = json.dumps(fragmentos, ensure_ascii=False), False
+                fragmentos = [
+                    {"seccion": c["titulo"], "texto": c["texto"]}
+                    for c in indice.buscar(consulta, k=k)
+                ]
+                contenido = json.dumps(fragmentos, ensure_ascii=False)
+                es_error = False
             except Exception as e:  # noqa: BLE001
-                contenido, es_error = str(e), True
+                contenido, es_error = f"Error en la búsqueda: {e}", True
 
             resultados.append({
                 "type": "tool_result",
@@ -88,10 +103,30 @@ def responder(pregunta: str) -> str:
 
 
 if __name__ == "__main__":
-    console.print(responder("¿Puedo devolver un monitor descatalogado?"))
+    if not INDICE.exists():
+        console.print("[yellow]Falta el índice. Ejecuta antes 03_pipeline_rag.py[/yellow]")
+        sys.exit(0)
+
+    indice = Indice.cargar(INDICE)
+
+    PREGUNTAS = [
+        # Una recuperación basta: RAG clásico daría lo mismo.
+        "¿Cuántos días tengo para devolver un producto?",
+        # Cruza dos secciones: aquí es donde el agéntico se separa.
+        "Compré un monitor ultrawide que ahora está descatalogado y quiero "
+        "devolverlo. ¿Puedo, y quién paga el envío?",
+    ]
+
+    for pregunta in PREGUNTAS:
+        console.print(f"\n[bold green]P:[/bold green] {pregunta}")
+        console.print(f"[cyan]R:[/cyan] {responder(indice, pregunta)}")
 
 # RAG clásico: 1 búsqueda fija, con la pregunta tal cual, barato y rápido.
 # Agéntico: las búsquedas que decida, reformulando, más lento y más caro.
+#
+# La segunda pregunta es la que justifica el patrón: mezcla estado del producto
+# (descatalogado), política de devolución y quién paga el envío. Eso vive en
+# tres secciones distintas y una sola recuperación no las trae todas.
 #
 # Empiezo por el clásico. Paso al agéntico cuando mida que mis preguntas
 # necesitan más de una recuperación para responderse.

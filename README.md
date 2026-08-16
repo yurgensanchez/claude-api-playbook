@@ -15,6 +15,7 @@ El código está actualizado a la API actual, no a la de hace dos años.
 | Que el modelo llame a mis funciones | [`05-tool-use/`](05-tool-use/) |
 | Saber si mi prompt funciona, con números | [`03-evaluacion-prompts/`](03-evaluacion-prompts/) |
 | Buscar sobre documentos propios | [`06-rag-busqueda-agentica/`](06-rag-busqueda-agentica/) |
+| **Decidir si necesito RAG o me basta con caching** | [`06-rag-busqueda-agentica/README.md`](06-rag-busqueda-agentica/#antes-de-montar-un-rag-lo-necesitas) |
 | Bajar el coste de un prompt grande | [`07-features-claude/05_prompt_caching.py`](07-features-claude/05_prompt_caching.py) |
 | JSON garantizado en la respuesta | [`02-acceso-api/08_datos_estructurados.py`](02-acceso-api/08_datos_estructurados.py) |
 | Exponer capacidades a Claude Code u otro cliente | [`08-mcp/`](08-mcp/) |
@@ -36,7 +37,7 @@ El código está actualizado a la API actual, no a la de hace dos años.
 | [03 — Evaluación de prompts](03-evaluacion-prompts/) | Dataset, ejecución paralela, grading por modelo y por código | Ejecutable |
 | [04 — Ingeniería de prompts](04-ingenieria-prompts/) | Claridad, especificidad, XML, few-shot | Ejecutable |
 | [05 — Tool use](05-tool-use/) | Bucle agéntico, tools de servidor y de cliente, fine-grained | Ejecutable · proyecto pendiente |
-| [06 — RAG y búsqueda agéntica](06-rag-busqueda-agentica/) | Chunking, embeddings, BM25, fusión RRF | Parcial — pipeline completo pendiente |
+| [06 — RAG y búsqueda agéntica](06-rag-busqueda-agentica/) | Pipeline híbrido completo: chunking, embeddings, BM25, RRF, búsqueda agéntica | Ejecutable |
 | [07 — Features de Claude](07-features-claude/) | Thinking, visión, PDF, citations, caching, code execution | Ejecutable |
 | [08 — MCP](08-mcp/) | Servidor con tools, recursos y prompts + cliente | Ejecutable |
 | [09 — Claude Code y Computer Use](09-apps-anthropic/) | Configuración y notas | Notas |
