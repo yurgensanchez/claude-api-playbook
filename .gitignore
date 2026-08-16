@@ -21,6 +21,9 @@ outputs/
 **/data/chroma/
 claude_outputs/
 
+# Material original del curso (pertenece a Anthropic, no se republica)
+*.ipynb
+
 # Sistema operativo / editores
 .DS_Store
 Thumbs.db
