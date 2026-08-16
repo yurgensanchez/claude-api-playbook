@@ -4,7 +4,17 @@ Guía práctica de construcción con la API de Claude: tool use, evaluación de
 prompts, RAG, MCP, prompt caching y arquitecturas de agente.
 
 Cada patrón es un archivo ejecutable y aislado, con las trampas anotadas.
-El código está actualizado a la API actual, no a la de hace dos años.
+
+> **Basado en el curso [Building with the Claude API](https://anthropic.skilljar.com/claude-with-the-anthropic-api)
+> de Anthropic Academy.** El temario, los conceptos y la estructura de los
+> módulos son suyos; este repositorio es mi implementación mientras lo seguía,
+> con dos añadidos: el código está **actualizado a la API actual** (varias
+> técnicas que enseña el curso hoy devuelven 400) y algunos módulos incluyen la
+> decisión de arquitectura previa que el curso da por supuesta.
+>
+> No es material oficial de Anthropic. Si quieres aprender el temario, haz el
+> curso — es gratuito. Esto sirve para **construir**: consultar el patrón que
+> necesitas y copiarlo sabiendo dónde están las trampas.
 
 ---
 
@@ -122,7 +132,25 @@ concepto que enseña:
 
 ---
 
-## Créditos
+## Créditos y alcance
 
-Código propio escrito mientras seguía el curso. El temario y los materiales
-originales pertenecen a Anthropic.
+**Origen.** Este repositorio nace del curso [Building with the Claude API](https://anthropic.skilljar.com/claude-with-the-anthropic-api)
+de [Anthropic Academy](https://anthropic.com/learn), gratuito y con certificado.
+El temario, la secuencia de módulos y los conceptos son suyos.
+
+**Qué es mío.** El código de este repositorio está escrito por mí siguiendo ese
+temario, no copiado del material del curso. Lo que añadí por encima:
+
+- Adaptación a la API actual — el curso se grabó con una generación anterior de
+  modelos y varias de sus técnicas hoy devuelven 400 (ver
+  [`docs/DIFERENCIAS-CURSO.md`](docs/DIFERENCIAS-CURSO.md))
+- La comparativa de coste caching vs RAG vs grafo del
+  [módulo 06](06-rag-busqueda-agentica/), que es la decisión previa que el curso
+  da por supuesta
+- Un pipeline de recuperación reutilizable en vez de scripts sueltos
+
+**Qué no está aquí.** Los notebooks y materiales originales del curso no se
+republican: pertenecen a Anthropic. Si quieres el temario, haz el curso.
+
+**Para qué sirve.** Como referencia de construcción: buscar el patrón que
+necesitas, ver las trampas anotadas y copiarlo. No sustituye al curso.
