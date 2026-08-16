@@ -1,0 +1,28 @@
+# Credenciales
+.env
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Salidas generadas por los ejercicios
+outputs/
+*.log
+**/data/*.db
+**/data/*.index
+**/data/embeddings*.json
+**/data/chroma/
+claude_outputs/
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
